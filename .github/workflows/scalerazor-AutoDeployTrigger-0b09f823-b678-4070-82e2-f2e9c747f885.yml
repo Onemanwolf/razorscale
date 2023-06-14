@@ -1,0 +1,42 @@
+name: Trigger auto deployment for scalerazor
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/scalerazor-AutoDeployTrigger-0b09f823-b678-4070-82e2-f2e9c747f885.yml'
+
+  # Allow mannually trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.SCALERAZOR_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: appinsightcontainerreg.azurecr.io
+          registryUsername: ${{ secrets.SCALERAZOR_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.SCALERAZOR_REGISTRY_PASSWORD }}
+          containerAppName: scalerazor
+          resourceGroup: scalerazorenv
+          imageToBuild: appinsightcontainerreg.azurecr.io/scalerazor:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
